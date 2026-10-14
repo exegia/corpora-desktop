@@ -1,0 +1,10 @@
+import { readFileSync, writeFileSync } from "node:fs";
+const version = process.env.VERSION ?? process.argv[2];
+if (!version || !/^\d+\.\d+\.\d+$/.test(version)) throw new Error("VERSION must be X.Y.Z");
+const pkg = JSON.parse(readFileSync("package.json", "utf8"));
+pkg.version = version;
+writeFileSync("package.json", JSON.stringify(pkg, null, 2) + "\n");
+const cargo = readFileSync("src-tauri/Cargo.toml", "utf8");
+writeFileSync("src-tauri/Cargo.toml", cargo.replace(/^version = "[^"]+"/m, `version = "${version}"`));
+const result = Bun.spawnSync(["cargo", "update", "--workspace", "--manifest-path", "src-tauri/Cargo.toml"], { stdout: "inherit", stderr: "inherit" });
+if (result.exitCode) process.exit(result.exitCode);

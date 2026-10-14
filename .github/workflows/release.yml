@@ -1,0 +1,83 @@
+name: Release
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  INSTALL_FLAGS: --frozen-lockfile
+
+jobs:
+  native:
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true && startsWith(github.head_ref, 'release/v')
+    uses: ./.github/workflows/native.yml
+
+  deploy:
+    needs: native
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: corpora-*
+          path: installers
+          merge-multiple: true
+      - name: Publish installers
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          tag="v$(node -p "require('./package.json').version")"
+          if ! gh release view "$tag" >/dev/null 2>&1; then
+            gh release create "$tag" --target "$(git rev-parse HEAD)" --title "$tag" --generate-notes --draft
+          fi
+          find installers -type f -print0 | xargs -0 -I '{}' gh release upload "$tag" '{}' --clobber
+          gh release edit "$tag" --draft=false
+
+  wrapup:
+    name: wrapup
+    needs: [deploy]
+    # `deploy` is skipped on a manual dispatch, which is the bootstrap case —
+    # so run whenever it did not actually fail.
+    if: ${{ always() && (github.event_name == 'workflow_dispatch' || needs.deploy.result == 'success') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/create-github-app-token@v3
+        id: app-token
+        with:
+          app-id: ${{ secrets.AUTOMATION_APP_ID }}
+          private-key: ${{ secrets.AUTOMATION_APP_PRIVATE_KEY }}
+
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+          fetch-tags: true
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Sync lanes and clean up
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_REPO: ${{ github.repository }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          git config user.name  "corpora-automation[bot]"
+          git config user.email "corpora-automation[bot]@users.noreply.github.com"
+          make bootstrap-lanes
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            make sync-lanes
+            make cleanup-cycle
+          fi

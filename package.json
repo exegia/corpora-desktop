@@ -1,0 +1,20 @@
+{
+  "name": "@exegia/corpora-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "tauri": "tauri",
+    "web:dev": "bun scripts/web.ts dev",
+    "web:build": "bun scripts/web.ts build",
+    "check": "bun scripts/check.ts",
+    "test": "bun test",
+    "version:set": "bun scripts/version.ts"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2",
+    "@types/bun": "latest"
+  }
+}

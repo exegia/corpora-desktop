@@ -1,0 +1,49 @@
+name: Next
+
+on:
+  push:
+    branches:
+      - next
+  workflow_dispatch:
+
+concurrency:
+  group: next
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  INSTALL_FLAGS: --frozen-lockfile
+
+jobs:
+  preview:
+    uses: ./.github/workflows/native.yml
+
+  cut-release:
+    needs: preview
+    name: cut-release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/create-github-app-token@v3
+        id: app-token
+        with:
+          app-id: ${{ secrets.AUTOMATION_APP_ID }}
+          private-key: ${{ secrets.AUTOMATION_APP_PRIVATE_KEY }}
+
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          token: ${{ steps.app-token.outputs.token }}
+
+      - uses: ./.github/actions/setup
+
+      - name: Cut or refresh the release branch
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          git config user.name  "corpora-automation[bot]"
+          git config user.email "corpora-automation[bot]@users.noreply.github.com"
+          make cut-release

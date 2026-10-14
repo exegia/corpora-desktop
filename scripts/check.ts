@@ -1,0 +1,12 @@
+import { readFileSync } from "node:fs";
+import { strict as assert } from "node:assert";
+const json = (path: string) => JSON.parse(readFileSync(path, "utf8"));
+const pkg = json("package.json");
+const config = json("src-tauri/tauri.conf.json");
+const cargo = readFileSync("src-tauri/Cargo.toml", "utf8");
+assert.equal(cargo.match(/^version = "([^"]+)"/m)?.[1], pkg.version);
+assert.equal(config.version, "../package.json");
+assert.equal(config.build.devUrl, "http://localhost:1420");
+assert.equal(config.build.frontendDist, "../../corpora-web/build/client");
+assert.match(json("web-source.json").ref, /^[a-f0-9]{40}$/);
+console.log("Version and frontend contracts passed");
