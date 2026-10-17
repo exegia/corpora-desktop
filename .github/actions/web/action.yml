@@ -1,0 +1,21 @@
+name: Web source
+description: Check out and install the pinned corpora-web frontend
+runs:
+  using: composite
+  steps:
+    - id: source
+      shell: bash
+      run: |
+        echo "repository=$(node -p "require('./web-source.json').repository")" >> "$GITHUB_OUTPUT"
+        echo "ref=$(node -p "require('./web-source.json').ref")" >> "$GITHUB_OUTPUT"
+    - uses: actions/checkout@v4
+      with:
+        repository: ${{ steps.source.outputs.repository }}
+        ref: ${{ steps.source.outputs.ref }}
+        path: .web-source
+        persist-credentials: false
+    - shell: bash
+      run: |
+        mv .web-source ../corpora-web
+        cd ../corpora-web
+        bun install --frozen-lockfile
