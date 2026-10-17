@@ -1,8 +1,9 @@
 # Daily (and on-demand) promotion: open a PR from `dev` into `next`.
 #
-# Version comes from line-count churn between `next` and `dev` unless the
-# dispatcher overrides it. The PR auto-merges once `guard` and `check` pass;
-# pushing `next` then cuts `release/vX.Y.Z` (see next.yml).
+# The version is what semantic-release will publish: conventional commits on
+# `dev` since the last vX.Y.Z tag (`make next-version`). Nothing releasable,
+# nothing promoted. The PR auto-merges once `guard` and `check` pass; pushing
+# `next` then cuts `release/vX.Y.Z` (see next.yml).
 #
 # Schedule workflows are read from the default branch (`main`). This file
 # does not fire on a cron until it has shipped there.
@@ -12,12 +13,6 @@ on:
   schedule:
     - cron: "0 22 * * *" # 22:00 UTC daily
   workflow_dispatch:
-    inputs:
-      bump:
-        description: Bump for the release that will be cut from next (auto = from line count)
-        default: auto
-        type: choice
-        options: [auto, major, minor, patch]
 
 concurrency:
   group: promote
@@ -25,6 +20,9 @@ concurrency:
 
 permissions:
   contents: read
+
+env:
+  INSTALL_FLAGS: --frozen-lockfile
 
 jobs:
   promote:
@@ -43,11 +41,13 @@ jobs:
           fetch-tags: true
           token: ${{ steps.app-token.outputs.token }}
 
+      - uses: oven-sh/setup-bun@v2
+      - run: make install
+
       - name: Open or refresh the promote PR
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           GH_REPO: ${{ github.repository }}
-          BUMP_INPUT: ${{ inputs.bump || 'auto' }}
         run: |
           set -eu
           git config user.name  "corpora-automation[bot]"
@@ -59,22 +59,11 @@ jobs:
             +refs/heads/next:refs/remotes/origin/next \
             +refs/heads/main:refs/remotes/origin/main
 
-          info="$(make -s --no-print-directory churn-info FROM=origin/next TO=origin/dev)"
-          auto_bump="$(printf '%s\n' "$info" | awk '{print $1}')"
-          churn="$(printf '%s\n' "$info" | awk '{print $4}')"
-          if [ "$BUMP_INPUT" = auto ]; then
-            bump="$auto_bump"
-          else
-            bump="$BUMP_INPUT"
+          version="$(make -s --no-print-directory next-version REF=origin/dev)"
+          if [ -z "$version" ]; then
+            echo "### Promote skipped — no feat/fix/breaking commits on dev since the last tag" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
           fi
-          version="$(make -s --no-print-directory next-version BUMP="$bump")"
+          echo "### Promote v$version" >> "$GITHUB_STEP_SUMMARY"
 
-          {
-            echo "### Promote"
-            echo
-            echo "- bump: \`$bump\` (input \`$BUMP_INPUT\`, auto \`$auto_bump\`)"
-            echo "- churn: $churn lines"
-            echo "- version: v$version"
-          } >> "$GITHUB_STEP_SUMMARY"
-
-          make promote-pr VERSION="$version" BUMP="$bump" CHURN="$churn"
+          make promote-pr VERSION="$version"

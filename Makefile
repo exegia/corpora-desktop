@@ -8,13 +8,8 @@ BUN := bun
 # `--frozen-lockfile` in CI, a plain install locally.
 INSTALL_FLAGS ?=
 
-# Bump used when opening the next release branch.
-BUMP ?= minor
-
-# Line-count thresholds for promote: insertions+deletions of next...dev.
-# < CHURN_MINOR → patch (0.0.+1); < CHURN_MAJOR → minor (0.+1.0); else major.
-CHURN_MINOR ?= 100
-CHURN_MAJOR ?= 1000
+# Ref whose commits `next-version` analyzes (semantic-release rules, release.config.mjs).
+REF ?= HEAD
 
 # Commit range for `release-notes`.
 RANGE ?= origin/main..HEAD
@@ -25,20 +20,20 @@ RANGE ?= origin/main..HEAD
 GH_REPO ?= $(shell git config --get remote.origin.url 2>/dev/null | sed -E 's,.*github\.com[:/],,; s,\.git$$,,')
 
 # Branch and commit-title types accepted by `pr-guard`.
-TYPES := feat|fix|chore|docs|ci|refactor|test|perf|build|style|revert
+TYPES := feat|fix|chore|docs|ci|refactor|test|perf|build|style|revert|ai|copilot
 
 # Native output directory.
 BUILD_DIR := src-tauri/target
 
-pkg_version = node -p "require('./package.json').version"
+pkg_version = node -p 'require("./package.json").version'
 
 .DEFAULT_GOAL := help
 
 .PHONY: help install serve build preview test typecheck lint check ci pack \
         clean distclean pkg-version next-version version-set release-notes \
         pr-guard release-pr release-branch delete-branch deploy deploy-preview \
-        tag-release rulesets-apply rulesets-diff \
-        churn-info churn-bump bootstrap-lanes promote-pr cut-release \
+        release release-check rulesets-apply rulesets-diff \
+        bootstrap-lanes promote-pr cut-release \
         sync-lanes cleanup-cycle cleanup-local
 
 help: ## List available targets
@@ -65,14 +60,8 @@ pack: install build
 pkg-version: ## Print the version in package.json
 	@$(pkg_version)
 
-next-version: ## Print the version after the newest vX.Y.Z tag (BUMP=major|minor|patch)
-	@git tag -l 'v[0-9]*.[0-9]*.[0-9]*' | sed 's/^v//' \
-	  | sort -t. -k1,1n -k2,2n -k3,3n | tail -1 \
-	  | awk -F. -v b='$(BUMP)' \
-	      'BEGIN { maj = 0; min = 0; pat = 0 } { maj = $$1; min = $$2; pat = $$3 } \
-	       END { if (b == "major") printf "%d.0.0\n", maj + 1; \
-	             else if (b == "patch") printf "%d.%d.%d\n", maj, min, pat + 1; \
-	             else printf "%d.%d.0\n", maj, min + 1 }'
+next-version: ## Print the version semantic-release would cut from REF (empty: nothing to release)
+	@$(BUN) scripts/next-version.ts "$(REF)"
 
 version-set: ## Write VERSION into package.json (env: VERSION)
 	@set -eu; : "$${VERSION:?VERSION is required}"; \
@@ -142,36 +131,20 @@ delete-branch: ## Delete a remote branch, tolerating one already gone (env: BRAN
 
 # --- releases ---------------------------------------------------------------
 
-tag-release: ## Tag HEAD as v<package version> and publish the GitHub Release
+release: ## Run semantic-release: verify, tag and publish installers/** (CI only)
+	bun run release
+
+release-check: ## Fail unless package.json is the version semantic-release would cut from HEAD
 	@set -eu; \
-	tag="v$$($(pkg_version))"; \
-	if gh api "repos/$(GH_REPO)/git/ref/tags/$$tag" >/dev/null 2>&1; then \
-	  echo "$$tag already exists — skipping"; exit 0; \
-	fi; \
-	gh release create "$$tag" --target "$$(git rev-parse HEAD)" \
-	  --title "$$tag" --generate-notes; \
-	echo "released $$tag"
+	want="$$($(MAKE) -s --no-print-directory next-version REF=HEAD)"; \
+	have="$$($(pkg_version))"; \
+	[ -n "$$want" ] \
+	  || { echo "::error::no feat/fix/breaking commits since the last tag — nothing to release"; exit 1; }; \
+	[ "$$want" = "$$have" ] \
+	  || { echo "::error::commits call for v$$want but package.json is v$$have — re-cut the release branch"; exit 1; }; \
+	echo "release check passed: v$$have"
 
 # --- promotion (dev → next → release/v*) ------------------------------------
-
-# Prints: bump insertions deletions total
-# bump is major|minor|patch from CHURN_* thresholds.
-churn-info: ## Print bump and line counts for FROM...TO (env: FROM, TO)
-	@set -eu; \
-	: "$${FROM:?FROM is required}" "$${TO:?TO is required}"; \
-	stat="$$(git diff --shortstat "$$FROM...$$TO" 2>/dev/null || true)"; \
-	ins="$$(printf '%s' "$$stat" | sed -n 's/.* \([0-9][0-9]*\) insertion.*/\1/p')"; \
-	del="$$(printf '%s' "$$stat" | sed -n 's/.* \([0-9][0-9]*\) deletion.*/\1/p')"; \
-	ins="$${ins:-0}"; del="$${del:-0}"; \
-	total=$$((ins + del)); \
-	if [ "$$total" -ge $(CHURN_MAJOR) ]; then bump=major; \
-	elif [ "$$total" -ge $(CHURN_MINOR) ]; then bump=minor; \
-	else bump=patch; \
-	fi; \
-	printf '%s %s %s %s\n' "$$bump" "$$ins" "$$del" "$$total"
-
-churn-bump: ## Classify a bump from git diff --shortstat (env: FROM, TO)
-	@$(MAKE) -s --no-print-directory churn-info FROM="$(FROM)" TO="$(TO)" | awk '{print $$1}'
 
 bootstrap-lanes: ## Create origin/dev and origin/next if they do not exist
 	@set -eu; \
@@ -200,7 +173,7 @@ bootstrap-lanes: ## Create origin/dev and origin/next if they do not exist
 	  echo "created origin/dev from $$src"; \
 	fi
 
-promote-pr: ## Open or refresh the PR from dev into next (env: VERSION, BUMP, CHURN)
+promote-pr: ## Open or refresh the PR from dev into next (env: VERSION)
 	@set -eu; \
 	git fetch --quiet --force origin \
 	  "+refs/heads/dev:refs/remotes/origin/dev" \
@@ -213,11 +186,9 @@ promote-pr: ## Open or refresh the PR from dev into next (env: VERSION, BUMP, CH
 	: "$${VERSION:?VERSION is required}"; \
 	stat="$$(git diff --shortstat origin/next...origin/dev || true)"; \
 	body="$$(mktemp)"; \
-	{ printf 'Promote **v%s** (`%s`%s).\n\n' "$$VERSION" "$${BUMP:-patch}" \
-	    "$${CHURN:+, $$CHURN lines of churn}"; \
+	{ printf 'Promote **v%s** (semantic-release commit analysis).\n\n' "$$VERSION"; \
 	  printf '<!-- corpora-release: v%s -->\n\n' "$$VERSION"; \
-	  printf '%s\n\n' "$${stat:-0 files changed}"; \
-	  printf -- '- bump: %s\n' "$${BUMP:-patch}"; \
+	  printf '%s\n' "$${stat:-0 files changed}"; \
 	} > "$$body"; \
 	num="$$(gh pr list --base next --head dev --state open --json number --jq '.[0].number // empty')"; \
 	if [ -n "$$num" ]; then \
@@ -253,12 +224,14 @@ cut-release: ## Cut or refresh release/v<VERSION> from origin/next (env: VERSION
 	    VERSION="$$(printf '%s' "$$body" | sed -n 's/.*<!-- corpora-release: v\([0-9][0-9.]*\) -->.*/\1/p')"; \
 	  fi; \
 	  if [ -z "$${VERSION-}" ]; then \
-	    b="$$($(MAKE) -s --no-print-directory churn-bump FROM=origin/main TO=origin/next)"; \
-	    VERSION="$$($(MAKE) -s --no-print-directory next-version BUMP="$$b")"; \
+	    VERSION="$$($(MAKE) -s --no-print-directory next-version REF=origin/next)"; \
+	  fi; \
+	  if [ -z "$${VERSION-}" ]; then \
+	    echo "next has no feat/fix/breaking commits since the last tag — nothing to cut"; \
+	    exit 0; \
 	  fi; \
 	  version="$$VERSION"; \
 	fi; \
-	: "$${version:?could not determine VERSION to cut}"; \
 	branch="release/v$$version"; \
 	if git fetch --quiet origin "+refs/heads/$$branch:refs/remotes/origin/$$branch" 2>/dev/null; then \
 	  git checkout --quiet -B "$$branch" "origin/$$branch"; \
@@ -276,9 +249,8 @@ cut-release: ## Cut or refresh release/v<VERSION> from origin/next (env: VERSION
 	git push --quiet -u origin "$$branch"; \
 	echo "updated $$branch"
 
-release-branch: ## Cut release/v<next> from origin/next (env: VERSION, BUMP)
-	@$(MAKE) --no-print-directory cut-release \
-	  VERSION="$${VERSION:-$$($(MAKE) -s --no-print-directory next-version)}"
+release-branch: ## Cut release/v<next> from origin/next (env: VERSION overrides the analysis)
+	@$(MAKE) --no-print-directory cut-release VERSION="$(VERSION)"
 
 sync-lanes: ## Merge origin/main into next and dev via PRs
 	@set -eu; \

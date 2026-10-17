@@ -38,6 +38,7 @@ jobs:
           token: ${{ steps.app-token.outputs.token }}
 
       - uses: ./.github/actions/setup
+      - run: make install
 
       - name: Cut or refresh the release branch
         env:
