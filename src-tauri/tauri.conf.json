@@ -7,22 +7,25 @@
     "removeUnusedCommands": true,
     "beforeDevCommand": "bun run web:dev",
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "bun run web:build",
-    "frontendDist": "../../corpora-web/build/client"
+    "beforeBuildCommand": "bun run build",
+    "frontendDist": "../dist"
   },
   "app": {
     "windows": [
       {
         "label": "main",
-        "title": "tauri-app",
+        "title": "Corpora",
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true,
         "width": 1200,
-        "height": 800,
-        "minWidth": 1000,
-        "minHeight": 700,
+        "height": 720,
+        "minWidth": 900,
+        "minHeight": 620,
         "resizable": true,
         "fullscreen": false,
         "maximized": false,
         "center": true,
+        "trafficLightPosition": { "x": 18, "y": 28 },
         "decorations": true,
         "alwaysOnTop": false,
         "transparent": false,

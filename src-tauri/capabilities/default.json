@@ -25,8 +25,6 @@
     "notification:default",
     "process:default",
     "os:default",
-    "global-shortcut:default",
-    "updater:default",
-    "window-state:default"
+    "global-shortcut:default"
   ]
 }

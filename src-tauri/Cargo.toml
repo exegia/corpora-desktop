@@ -3,7 +3,7 @@ name = "corpora-desktop"
 version = "0.1.0"
 description = "Corpora desktop shell"
 authors = ["Exegia"]
-edition = "2026"
+edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -26,6 +26,8 @@ tauri-plugin-clipboard-manager = "2"
 tauri-plugin-dialog = "2"
 tauri-plugin-fs = "2"
 tauri-plugin-log = "2"
+tauri-plugin-store = "2"
+tauri-plugin-autostart = "2"
 tauri-plugin-notification = "2"
 tauri-plugin-persisted-scope = "2"
 tauri-plugin-process = "2"
@@ -42,6 +44,8 @@ specta-typescript = "=0.0.9"
 # macOS-only: NSPanel for native panel behavior (fullscreen overlay, click-outside dismiss)
 [target.'cfg(target_os = "macos")'.dependencies]
 tauri-nspanel = { git = "https://github.com/ahkohd/tauri-nspanel", branch = "v2.1" }
+objc2 = "0.6"
+objc2-app-kit = { version = "0.3", features = ["NSApplication", "NSResponder"] }
 
 # Optimize for smaller binary size in release builds
 [profile.release]
