@@ -31,10 +31,6 @@
       {
         "name": "beta",
         "prerelease": true
-      },
-      {
-        "name": "alpha",
-        "prerelease": true
       }
     ]
   },
@@ -59,10 +55,19 @@
     "@types/bun": "latest",
     "conventional-changelog-conventionalcommits": "^10.4.1",
     "semantic-release": "^25.0.9",
-    "tailwindcss": "^4.3.3"
+    "tailwindcss": "^4.3.3",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "@vitejs/plugin-react": "^4.6.0",
+    "typescript": "~5.8.3",
+    "vite": "^7.0.4"
   },
   "dependencies": {
     "@reactuses/core": "^6.6.0",
+    "@tauri-apps/api": "^2",
+    "@tauri-apps/plugin-autostart": "^2.5.1",
+    "@tauri-apps/plugin-notification": "^2.3.3",
+    "@tauri-apps/plugin-store": "^2.4.3",
     "clsx": "^2.1.1",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",

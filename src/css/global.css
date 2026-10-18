@@ -18,3 +18,22 @@
 /* Match corpora-web: the `.dark` class on <html> drives `dark:`, not the OS
    preference, so the theme setting can override it. */
 @custom-variant dark (&:where(.dark, .dark *));
+
+.titlebar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--titlebar-height);
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-3);
+  pointer-events: auto;
+}
+
+/* Start past the inset macOS traffic lights (fixed to the window). */
+.titlebar[data-mac='true'] .titlebar-left {
+  padding-left: var(--traffic-lights-width);
+}
