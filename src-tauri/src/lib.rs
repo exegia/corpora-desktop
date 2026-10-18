@@ -170,6 +170,7 @@ pub fn run() {
             Some(vec![AUTOSTART_FLAG]),
         ))
         .invoke_handler(tauri::generate_handler![
+            desktop_version,
             frontend_ready,
             set_menu_bar_visible,
             set_autostart,
