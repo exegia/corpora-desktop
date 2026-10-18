@@ -1,0 +1,71 @@
+{
+  "name": "@exegia/corpora-desktop",
+  "version": "0.1.0",
+  "author": "Emmanuel De Freitas",
+  "copyright": "Copyright © 2026 Emmanuel De Freitas. All rights reserved.",
+  "bugs": {
+    "url": "https://github.com/exegia/corpora-desktop/issues",
+    "email": "emmanuel@exegia.co"
+  },
+  "trustedDependencies": [
+    "@ast-grep/cli"
+  ],
+  "description": "Desktop application serving the corpora apps on macOS, Windows and Linux.",
+  "homepage": "https://corpora.exegia.co",
+  "keywords": [
+    "context-fabric",
+    "text-fabric",
+    "corpus",
+    "scholar",
+    "bible",
+    "quran",
+    "torah",
+    "tanakh",
+    "book of mormons"
+  ],
+  "license": "MIT",
+  "release": {
+    "branches": [
+      "master",
+      "next",
+      {
+        "name": "beta",
+        "prerelease": true
+      },
+      {
+        "name": "alpha",
+        "prerelease": true
+      }
+    ]
+  },
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "tauri": "tauri",
+    "web:dev": "bun scripts/web.ts dev",
+    "web:build": "bun scripts/web.ts build",
+    "check": "bun scripts/check.ts",
+    "test": "bun test",
+    "version:set": "bun scripts/version.ts",
+    "release": "semantic-release"
+  },
+  "devDependencies": {
+    "@semantic-release/commit-analyzer": "^13.0.1",
+    "@semantic-release/exec": "^7.1.0",
+    "@tailwindcss/vite": "^4.3.3",
+    "@tauri-apps/cli": "^2",
+    "@types/bun": "latest",
+    "conventional-changelog-conventionalcommits": "^10.4.1",
+    "semantic-release": "^25.0.9",
+    "tailwindcss": "^4.3.3"
+  },
+  "dependencies": {
+    "@reactuses/core": "^6.6.0",
+    "clsx": "^2.1.1",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "tailwind-merge": "^3.7.0"
+  }
+}

@@ -1,0 +1,77 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Corpora",
+  "version": "../package.json",
+  "identifier": "org.exegia.corpora",
+  "build": {
+    "removeUnusedCommands": true,
+    "beforeDevCommand": "bun run web:dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "bun run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Corpora",
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true,
+        "width": 1200,
+        "height": 720,
+        "minWidth": 900,
+        "minHeight": 620,
+        "resizable": true,
+        "fullscreen": false,
+        "maximized": false,
+        "center": true,
+        "trafficLightPosition": { "x": 18, "y": 28 },
+        "decorations": true,
+        "alwaysOnTop": false,
+        "transparent": false,
+        "shadow": true,
+        "dragDropEnabled": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' tauri: ipc: http://ipc.localhost"
+    },
+    "withGlobalTauri": true,
+    "macOSPrivateApi": true
+  },
+  "bundle": {
+    "createUpdaterArtifacts": true,
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "publisher": "corpora apps",
+    "category": "Productivity",
+    "shortDescription": "Scholarly research management and organization tool for researchers, students, and academics.",
+    "longDescription": "Corpora is a comprehensive research management and organization tool designed for researchers, students, and academics. It provides a user-friendly interface to manage scholarly articles, papers, and other research materials efficiently. With features like advanced search, tagging, and categorization, users can easily organize their research library. Additionally, Corpora offers collaboration tools for sharing resources with peers and colleagues. The application supports multiple file formats and integrates with popular reference management systems, making it an essential tool for anyone involved in academic research.",
+    "copyright": "Copyright © 2026 corpora apps. All rights reserved.",
+    "macOS": {
+      "frameworks": [],
+      "minimumSystemVersion": "10.15",
+      "signingIdentity": "-",
+      "providerShortName": null,
+      "entitlements": null,
+      "exceptionDomain": ""
+    }
+  },
+  "plugins": {
+    "updater": {
+      "active": true,
+      "endpoints": [
+        "https://github.com/YOUR_USERNAME/YOUR_REPO/releases/latest/download/latest.json"
+      ],
+      "dialog": true,
+      "pubkey": "YOUR_UPDATER_PUBLIC_KEY_HERE"
+    }
+  }
+}

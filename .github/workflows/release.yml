@@ -1,0 +1,92 @@
+# A release/vX.Y.Z PR merged into main: build installers, then semantic-release.
+#
+# Triggered by `push`, not `pull_request: [closed]`: semantic-release refuses to
+# publish from a pull_request event, and only release PRs can reach main
+# (`make pr-guard`). semantic-release runs only after every native build passed;
+# the merge itself already required guard, check and package (rulesets/main.json).
+#
+# GITHUB_TOKEN is enough: semantic-release only creates the tag and the GitHub
+# Release — the version commit was made on the release branch by cut-release.
+name: Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  INSTALL_FLAGS: --frozen-lockfile
+
+jobs:
+  native:
+    if: github.event_name == 'push'
+    uses: ./.github/workflows/native.yml
+
+  release:
+    name: release
+    needs: native
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # tag + GitHub Release
+      issues: write # comment on issues fixed by the release
+      pull-requests: write # comment on and label released PRs
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: make install
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: corpora-*
+          path: installers
+          merge-multiple: true
+      - name: Publish with semantic-release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: make release
+
+  wrapup:
+    name: wrapup
+    needs: [release]
+    # `release` is skipped on a manual dispatch, which is the bootstrap case —
+    # so run whenever it did not actually fail.
+    if: ${{ always() && (github.event_name == 'workflow_dispatch' || needs.release.result == 'success') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/create-github-app-token@v3
+        id: app-token
+        with:
+          app-id: ${{ secrets.AUTOMATION_APP_ID }}
+          private-key: ${{ secrets.AUTOMATION_APP_PRIVATE_KEY }}
+
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+          fetch-tags: true
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Sync lanes and clean up
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_REPO: ${{ github.repository }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          git config user.name  "corpora-automation[bot]"
+          git config user.email "corpora-automation[bot]@users.noreply.github.com"
+          make bootstrap-lanes
+          if [ "$EVENT_NAME" = "push" ]; then
+            make sync-lanes
+            make cleanup-cycle
+          fi

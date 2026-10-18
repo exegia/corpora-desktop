@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <!-- Shown in the one-time automation prompt when the app adds/removes
+       itself from Login Items via System Events (see src/autostart.rs). -->
+  <key>NSAppleEventsUsageDescription</key>
+  <string>Allow this app to add or remove itself from your macOS Login Items so it can launch at startup.</string>
+</dict>
+</plist>
