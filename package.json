@@ -1,11 +1,20 @@
 {
   "name": "@exegia/corpora-desktop",
   "version": "0.1.0",
-  "author": "emmanuel-defreitas",
+  "author": "Emmanuel De Freitas",
+  "copyright": "Copyright © 2026 Emmanuel De Freitas. All rights reserved.",
   "bugs": {
     "url": "https://github.com/exegia/corpora-desktop/issues",
     "email": "emmanuel@exegia.co"
   },
+  "overrides": {
+    "typescript-eslint": {
+      "typescript": "$typescript"
+    }
+  },
+  "trustedDependencies": [
+    "@ast-grep/cli"
+  ],
   "description": "Desktop application serving the corpora apps on macOS, Windows and Linux.",
   "homepage": "https://corpora.exegia.co",
   "keywords": [
