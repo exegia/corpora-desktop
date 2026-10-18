@@ -1,6 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import App from './App'
+import App from '../../corpora-web/app/root'
 import { notifyFrontendReady } from '@/lib/tauri'
 import './css/global.css'
 

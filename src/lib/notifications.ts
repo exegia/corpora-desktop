@@ -2,7 +2,6 @@
  * Simple notification system supporting both in-app toasts and native system notifications
  */
 
-import { toast } from 'sonner'
 import { logger } from './logger'
 import { commands } from './tauri-bindings'
 
@@ -25,13 +24,6 @@ interface NotificationOptions {
  * @param options - Notification configuration
  *
  * @example
- * ```typescript
- * // Simple toast
- * notify('Success!', 'File saved successfully')
- *
- * // Error toast
- * notify('Error', 'Failed to save file', { type: 'error' })
- *
  * // Native system notification
  * notify('Update Available', 'A new version is ready to install', { native: true })
  * ```
@@ -54,35 +46,9 @@ export async function notify(
       if (result.status === 'error') {
         throw new Error(result.error)
       }
-    } else {
-      // Send in-app toast notification
-      logger.debug('Sending toast notification', { title, message, type })
-
-      const toastContent = message ? `${title}: ${message}` : title
-      const toastOptions = duration !== undefined ? { duration } : {}
-
-      switch (type) {
-        case 'success':
-          toast.success(toastContent, toastOptions)
-          break
-        case 'error':
-          toast.error(toastContent, toastOptions)
-          break
-        case 'warning':
-          toast.warning(toastContent, toastOptions)
-          break
-        case 'info':
-        default:
-          toast.info(toastContent, toastOptions)
-          break
-      }
     }
   } catch (error) {
     logger.error('Failed to send notification', { title, message, error })
-    // Fallback to toast if native notification fails
-    if (native) {
-      toast.error(`${title}${message ? `: ${message}` : ''}`)
-    }
   }
 }
 

@@ -67,10 +67,15 @@
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-autostart": "^2.5.1",
     "@tauri-apps/plugin-notification": "^2.3.3",
+    "@tauri-apps/plugin-os": "^2.4.0",
     "@tauri-apps/plugin-store": "^2.4.3",
     "clsx": "^2.1.1",
+    "i18next": "^26.5.2",
+    "lucide": "^1.59.0",
+    "lucide-react": "^1.59.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
-    "tailwind-merge": "^3.7.0"
+    "tailwind-merge": "^3.7.0",
+    "vitest": "^5.0.5"
   }
 }
