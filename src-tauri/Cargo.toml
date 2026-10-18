@@ -3,7 +3,7 @@ name = "corpora-desktop"
 version = "0.1.0"
 description = "Corpora desktop shell"
 authors = ["Exegia"]
-edition = "2024"
+edition = "2026"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -18,15 +18,35 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = [] }
+tauri = { version = "2", features = ["macos-private-api"] }
+tauri-plugin-opener = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+tauri-plugin-clipboard-manager = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-fs = "2"
+tauri-plugin-log = "2"
+tauri-plugin-notification = "2"
+tauri-plugin-persisted-scope = "2"
+tauri-plugin-process = "2"
+tauri-plugin-os = "2"
+tauri-plugin-global-shortcut = "2"
+log = "0.4"
+regex = "1"
 
+# Type-safe Tauri command bindings
+specta = { version = "=2.0.0-rc.22", features = ["derive", "serde_json"] }
+tauri-specta = { version = "=2.0.0-rc.21", features = ["typescript"] }
+specta-typescript = "=0.0.9"
 
-# Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration
+# macOS-only: NSPanel for native panel behavior (fullscreen overlay, click-outside dismiss)
+[target.'cfg(target_os = "macos")'.dependencies]
+tauri-nspanel = { git = "https://github.com/ahkohd/tauri-nspanel", branch = "v2.1" }
+
+# Optimize for smaller binary size in release builds
 [profile.release]
-codegen-units = 1
-lto = true
-opt-level = 3
-panic = "abort"
-strip = true
+codegen-units = 1        # Better LLVM optimization (slower build, smaller binary)
+lto = true               # Link-time optimizations
+opt-level = "s"          # Optimize for size over speed
+panic = "abort"          # Don't include panic unwinding code
+strip = true             # Remove debug symbols

@@ -1,11 +1,32 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Local main window core permissions; no filesystem or shell access.",
-  "windows": [
-    "main"
-  ],
+  "platforms": ["macOS", "windows", "linux"],
+  "description": "Capability for the main window",
+  "windows": ["main"],
   "permissions": [
-    "core:default"
+    "core:default",
+    "core:window:allow-minimize",
+    "core:window:allow-maximize",
+    "core:window:allow-toggle-maximize",
+    "core:window:allow-close",
+    "core:window:allow-set-fullscreen",
+    "core:window:allow-is-maximized",
+    "core:window:allow-is-fullscreen",
+    "core:window:default",
+    "core:window:allow-start-dragging",
+    "core:webview:allow-create-webview-window",
+    "core:event:default",
+    "opener:default",
+    "clipboard-manager:default",
+    "dialog:default",
+    "fs:default",
+    "log:default",
+    "notification:default",
+    "process:default",
+    "os:default",
+    "global-shortcut:default",
+    "updater:default",
+    "window-state:default"
   ]
 }
