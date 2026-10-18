@@ -3,6 +3,7 @@
     "target": "ES2022",
     "useDefineForClassFields": true,
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["vite/client"],
     "module": "ESNext",
     "skipLibCheck": true,
 
@@ -13,6 +14,8 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
+    "esModuleInterop": true,
+    "rootDirs": ["../corpora-web", "../corpora-web/.react-router/types"],
 
     /* Linting */
     "strict": true,
@@ -22,9 +25,10 @@
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["../corpora-web/app/*"],
+      "@corpora-web/*": ["../corpora-web/app/*"]
     }
   },
-  "include": ["src"],
+  "include": ["src/main.tsx", "src/vite-env.d.ts"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

@@ -1,16 +1,27 @@
-import { existsSync } from "node:fs";
-import { resolve } from "node:path";
-const web = resolve(import.meta.dir, "../../corpora-web");
-if (!existsSync(resolve(web, "package.json"))) throw new Error("Clone corpora-web beside corpora-desktop and run bun install there first.");
-const mode = process.argv[2];
-if (mode !== "dev" && mode !== "build") throw new Error("Expected dev or build");
-// CI supplies public VITE_* variables directly; local development uses web's dotenvx setup.
-const args = mode === "dev"
-  ? ["run", "dev", "--host", "localhost", "--port", "1420", "--strictPort"]
-  : process.env.CI ? ["x", "react-router", "build"] : ["run", "build"];
-const child = Bun.spawn([process.execPath, ...args], {
-  cwd: web, stdin: "inherit", stdout: "inherit", stderr: "inherit",
-  env: { ...process.env, PORT: "1420", BROWSER: "none" },
-});
-for (const signal of ["SIGINT", "SIGTERM"] as const) process.on(signal, () => child.kill(signal));
-process.exit(await child.exited);
+import { createRequire } from 'node:module'
+import { resolve } from 'node:path'
+import { existsSync } from 'node:fs'
+import { webSource } from './web-source'
+
+const mode = process.argv[2]
+if (mode !== 'dev' && mode !== 'build') throw new Error('Expected dev or build')
+
+// Reuse Web's encrypted public environment locally; explicit CI/desktop vars win.
+const envFile = resolve(webSource, '.env')
+if (!process.env.CI && existsSync(envFile)) {
+  const requireWeb = createRequire(resolve(webSource, 'package.json'))
+  requireWeb('@dotenvx/dotenvx').config({
+    path: envFile,
+    envKeysFile: resolve(webSource, '.env.keys'),
+    quiet: true,
+  })
+}
+
+const { createServer, build } = await import('vite')
+if (mode === 'build') {
+  await build()
+} else {
+  const server = await createServer()
+  await server.listen()
+  server.printUrls()
+}

@@ -1,4 +1,4 @@
-@import 'tailwindcss';
+@import '@corpora-web/app.css';
 
 :root {
   /* ---- Layout ---- */
@@ -37,3 +37,6 @@
 .titlebar[data-mac='true'] .titlebar-left {
   padding-left: var(--traffic-lights-width);
 }
+
+body { margin: 0; overflow: hidden; }
+#root { height: 100dvh; overflow: hidden; }

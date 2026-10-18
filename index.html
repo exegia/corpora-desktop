@@ -9,14 +9,14 @@
       ;(function () {
         var theme = 'system'
         try {
-          theme = localStorage.getItem('app:theme') || 'system'
+          theme = localStorage.getItem('corpora-theme') || 'system'
         } catch (e) {}
         if (theme === 'system') {
           theme = window.matchMedia('(prefers-color-scheme: dark)').matches
             ? 'dark'
             : 'light'
         }
-        document.documentElement.dataset.theme = theme
+        document.documentElement.classList.toggle('dark', theme === 'dark')
       })()
     </script>
   </head>

@@ -60,6 +60,7 @@ jobs:
           # Release PRs need tags and history for `make release-check`.
           fetch-depth: ${{ github.event.pull_request.base.ref == 'main' && 0 || 1 }}
       - uses: ./.github/actions/setup
+      - uses: ./.github/actions/web
       - run: make ci
       # semantic-release refuses to tag a version package.json does not declare,
       # after the installers are built. Catch the mismatch before the merge.

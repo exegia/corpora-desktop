@@ -1,7 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import App from '../../corpora-web/app/root'
-import { notifyFrontendReady } from '@/lib/tauri'
+import { CorporaWeb } from './components/corpora-web'
+import { notifyFrontendReady } from './lib/tauri'
 import './css/global.css'
 
 // The window starts hidden (see src-tauri). Reveal it only once the app
@@ -22,6 +22,6 @@ import './css/global.css'
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
-    <App />
+    <CorporaWeb />
   </React.StrictMode>
 )

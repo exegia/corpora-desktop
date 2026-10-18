@@ -39,7 +39,7 @@ export async function closeWindow() {
  */
 export async function notifyFrontendReady() {
   if (!isTauri()) return;
-  const theme = document.documentElement.dataset.theme === "light" ? "light" : "dark";
+  const theme = document.documentElement.classList.contains("dark") ? "dark" : "light";
   const { invoke } = await import("@tauri-apps/api/core");
   await invoke("frontend_ready", { theme });
 }
