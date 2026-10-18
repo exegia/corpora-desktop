@@ -1,49 +1,64 @@
-import { defineConfig } from 'vite'
+import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
-import path, { resolve } from 'path'
+import { resolve } from 'node:path'
+import { pathToFileURL } from 'node:url'
 import packageJson from './package.json'
+import { webSource } from './scripts/web-source'
 
 const host = process.env.TAURI_DEV_HOST
+const webApp = resolve(webSource, 'app')
 
-// https://vitejs.dev/config/
-export default defineConfig(async () => ({
-  define: {
-    __APP_VERSION__: JSON.stringify(packageJson.version),
-  },
-  plugins: [react(), tailwindcss()],
+// Read Web's route table at build time; framework tooling stays out of the
+// browser bundle. Explicit imports let Vite split each route normally.
+function webRoutes(): Plugin {
+  const id = 'virtual:corpora-web-routes'
+  return {
+    name: 'corpora-web-routes',
+    enforce: 'pre',
+    transform(code, id) {
+      if (id === resolve(import.meta.dirname, 'src/css/global.css')) {
+        return code + `\n@source ${JSON.stringify(webApp)};\n`
+      }
+    },
+    resolveId: source => source === id ? '\0' + id : undefined,
+    async load(source) {
+      if (source !== '\0' + id) return
+      const file = resolve(webApp, 'routes.ts')
+      this.addWatchFile(file)
+      const { default: routes } = await import(pathToFileURL(file).href)
+      type Entry = { file: string; id?: string; path?: string; index?: boolean; caseSensitive?: boolean; children?: Entry[] }
+      const emit = (entries: Entry[]): string => '[' + entries.map(entry => {
+        const { file, children, ...options } = entry
+        return `{...${JSON.stringify({ ...options, id: options.id ?? file.replace(/\.[^.]+$/, '') })},` +
+          `lazy:()=>import(${JSON.stringify(resolve(webApp, file))}).then(adaptRoute),` +
+          (children ? `children:${emit(children)},` : '') + '}'
+      }).join(',') + ']'
+      return `import { adaptRoute } from ${JSON.stringify(resolve(import.meta.dirname, 'src/lib/web-route.tsx'))}; export default ${emit(routes)};`
+    },
+    handleHotUpdate({ file, server }) {
+      if (file === resolve(webApp, 'routes.ts')) server.ws.send({ type: 'full-reload' })
+    },
+  }
+}
+
+export default defineConfig({
+  define: { __APP_VERSION__: JSON.stringify(packageJson.version) },
+  plugins: [webRoutes(), react(), tailwindcss()],
+  publicDir: resolve(webSource, 'public'),
+  envDir: webSource,
   resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-    },
+    alias: { '@corpora-web': webApp, '@': webApp },
+    // Source checkouts must share hook and provider/context identities.
+    dedupe: ['react', 'react-dom', 'react-router', 'jotai', '@base-ui/react', '@exegia/corpora-ui'],
   },
-  build: {
-    chunkSizeWarningLimit: 600, // Prevent warnings for template's bundled components
-    rolldownOptions: {
-      input: {
-        main: resolve(__dirname, 'index.html'),
-      },
-    },
-  },
-  // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
-  //
-  // 1. prevent vite from obscuring rust errors
   clearScreen: false,
-  // 2. tauri expects a fixed port, fail if that port is not available
   server: {
     port: 1420,
     strictPort: true,
-    host: host || false,
-    hmr: host
-      ? {
-          protocol: 'ws',
-          host,
-          port: 1421,
-        }
-      : undefined,
-    watch: {
-      // 3. tell vite to ignore watching `src-tauri`
-      ignored: ['**/src-tauri/**'],
-    },
+    host: host || '127.0.0.1',
+    fs: { allow: [import.meta.dirname, webSource] },
+    hmr: host ? { protocol: 'ws', host, port: 1421 } : undefined,
+    watch: { ignored: ['**/src-tauri/**'] },
   },
-}))
+})
