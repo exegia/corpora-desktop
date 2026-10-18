@@ -1,0 +1,20 @@
+@import 'tailwindcss';
+
+:root {
+  /* ---- Layout ---- */
+  --titlebar-height: 52px;
+  --traffic-lights-width: 80px; /* macOS inset traffic lights reserve */
+  --sidebar-width: 240px;
+  --right-panel-width: 380px;
+  --bottom-panel-height: 230px;
+  --settings-sidebar-width: 240px;
+  --settings-content-width: 540px;
+
+  /* ---- Motion ---- */
+  --transition-panel: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-fast: 0.15s ease;
+}
+
+/* Match corpora-web: the `.dark` class on <html> drives `dark:`, not the OS
+   preference, so the theme setting can override it. */
+@custom-variant dark (&:where(.dark, .dark *));

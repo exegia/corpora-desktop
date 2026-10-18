@@ -7,11 +7,6 @@
     "url": "https://github.com/exegia/corpora-desktop/issues",
     "email": "emmanuel@exegia.co"
   },
-  "overrides": {
-    "typescript-eslint": {
-      "typescript": "$typescript"
-    }
-  },
   "trustedDependencies": [
     "@ast-grep/cli"
   ],
@@ -59,12 +54,18 @@
   "devDependencies": {
     "@semantic-release/commit-analyzer": "^13.0.1",
     "@semantic-release/exec": "^7.1.0",
+    "@tailwindcss/vite": "^4.3.3",
     "@tauri-apps/cli": "^2",
     "@types/bun": "latest",
     "conventional-changelog-conventionalcommits": "^10.4.1",
-    "semantic-release": "^25.0.9"
+    "semantic-release": "^25.0.9",
+    "tailwindcss": "^4.3.3"
   },
   "dependencies": {
-    "@reactuses/core": "^6.6.0"
+    "@reactuses/core": "^6.6.0",
+    "clsx": "^2.1.1",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "tailwind-merge": "^3.7.0"
   }
 }
